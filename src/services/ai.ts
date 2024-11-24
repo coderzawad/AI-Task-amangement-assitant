@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { TaskFormData } from '../types';
 
 const openai = new OpenAI({
-  apiKey: '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', // Replace with your API key
+  apiKey: '', // Replace with your API key
   dangerouslyAllowBrowser: true
 });
 
