@@ -6,10 +6,57 @@ import { categorizeTasks } from '../services/ai';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-// ... rest of the imports ...
+interface TaskFormProps {
+  onSubmit: (task: TaskFormData) => void;
+}
 
 export default function TaskForm({ onSubmit }: TaskFormProps) {
-  // ... existing state and handlers ...
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [formData, setFormData] = useState<TaskFormData>({
+    title: '',
+    description: '',
+    priority: 'medium',
+    category: 'personal',
+    dueDate: new Date(),
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+
+    try {
+      const aiCategories = await categorizeTasks(formData.title + ' ' + formData.description);
+      const finalTask: TaskFormData = {
+        ...formData,
+        priority: aiCategories.priority,
+        category: aiCategories.category,
+      };
+
+      onSubmit(finalTask);
+      setFormData({
+        title: '',
+        description: '',
+        priority: 'medium',
+        category: 'personal',
+        dueDate: new Date(),
+      });
+      toast.success('Task added successfully!');
+    } catch (error) {
+      console.error('Error processing task:', error);
+      toast.error('Failed to process task. Using default categories.');
+      onSubmit(formData);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleVoiceInput = (transcript: string) => {
+    setFormData(prev => ({
+      ...prev,
+      title: transcript,
+    }));
+    toast.success('Voice input captured!');
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -26,6 +73,7 @@ export default function TaskForm({ onSubmit }: TaskFormProps) {
         />
         <VoiceInput onTranscript={handleVoiceInput} />
       </div>
+      
       <motion.textarea
         whileFocus={{ scale: 1.01 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -35,9 +83,54 @@ export default function TaskForm({ onSubmit }: TaskFormProps) {
         className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         rows={3}
       />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* ... existing select and input elements with motion ... */}
+        <motion.div whileHover={{ scale: 1.02 }} className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Tag className="w-4 h-4 inline mr-1" />
+            Category
+          </label>
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value as TaskFormData['category'] })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="work">Work</option>
+            <option value="personal">Personal</option>
+            <option value="errands">Errands</option>
+          </select>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.02 }} className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <AlertCircle className="w-4 h-4 inline mr-1" />
+            Priority
+          </label>
+          <select
+            value={formData.priority}
+            onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskFormData['priority'] })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.02 }} className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Calendar className="w-4 h-4 inline mr-1" />
+            Due Date
+          </label>
+          <input
+            type="date"
+            value={formData.dueDate.toISOString().split('T')[0]}
+            onChange={(e) => setFormData({ ...formData, dueDate: new Date(e.target.value) })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </motion.div>
       </div>
+
       <motion.button
         type="submit"
         disabled={isProcessing}

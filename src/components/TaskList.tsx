@@ -1,15 +1,16 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, Clock, Tag } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Tag, Trash2 } from 'lucide-react';
 import { Task } from '../types';
 import { format } from 'date-fns';
 
 interface TaskListProps {
   tasks: Task[];
   onToggleTask: (taskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-export default function TaskList({ tasks, onToggleTask }: TaskListProps) {
+export default function TaskList({ tasks, onToggleTask, onDeleteTask }: TaskListProps) {
   return (
     <div className="space-y-4">
       <AnimatePresence mode="popLayout">
@@ -71,7 +72,7 @@ export default function TaskList({ tasks, onToggleTask }: TaskListProps) {
                 >
                   <span className="flex items-center gap-1 text-gray-500">
                     <Clock className="w-4 h-4" />
-                    {format(task.dueDate, 'MMM d, yyyy')}
+                    {format(new Date(task.dueDate), 'MMM d, yyyy')}
                   </span>
                   <span className="flex items-center gap-1 text-gray-500">
                     <Tag className="w-4 h-4" />
@@ -91,6 +92,14 @@ export default function TaskList({ tasks, onToggleTask }: TaskListProps) {
                   </motion.span>
                 </motion.div>
               </motion.div>
+              <motion.button
+                onClick={() => onDeleteTask(task.id)}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+              </motion.button>
             </div>
           </motion.div>
         ))}

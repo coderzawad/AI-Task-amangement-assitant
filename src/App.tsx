@@ -8,11 +8,68 @@ import { Toaster, toast } from 'react-hot-toast';
 import { analyzeTasks } from './services/ai';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const STORAGE_KEY = 'ai-task-assistant-tasks';
+
 function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    try {
+      const savedTasks = localStorage.getItem(STORAGE_KEY);
+      return savedTasks ? JSON.parse(savedTasks) : [];
+    } catch (error) {
+      console.error('Error loading tasks from localStorage:', error);
+      return [];
+    }
+  });
   const [showAnalytics, setShowAnalytics] = useState(false);
 
-  // ... existing useEffect hooks remain the same ...
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (error) {
+      console.error('Error saving tasks to localStorage:', error);
+      toast.error('Failed to save tasks. Please check your browser storage settings.');
+    }
+  }, [tasks]);
+
+  const handleAddTask = async (taskData: TaskFormData) => {
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      ...taskData,
+      completed: false,
+      createdAt: new Date(),
+    };
+
+    setTasks(prevTasks => [...prevTasks, newTask]);
+    toast.success('Task added successfully!');
+
+    try {
+      const analysis = await analyzeTasks([newTask]);
+      if (analysis) {
+        toast(analysis, {
+          duration: 5000,
+          icon: '🤖',
+        });
+      }
+    } catch (error) {
+      console.error('Error analyzing task:', error);
+    }
+  };
+
+  const handleToggleTask = (taskId: string) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId
+          ? { ...task, completed: !task.completed }
+          : task
+      )
+    );
+    toast.success('Task status updated!');
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    toast.success('Task deleted!');
+  };
 
   return (
     <motion.div 
@@ -118,7 +175,11 @@ function App() {
               <p className="text-gray-500">No tasks yet. Add your first task above!</p>
             </motion.div>
           ) : (
-            <TaskList tasks={tasks} onToggleTask={handleToggleTask} />
+            <TaskList 
+              tasks={tasks} 
+              onToggleTask={handleToggleTask} 
+              onDeleteTask={handleDeleteTask}
+            />
           )}
         </motion.div>
       </div>
