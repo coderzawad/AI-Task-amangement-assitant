@@ -5,6 +5,5 @@ export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     include: ['regenerator-runtime'],
-    exclude: ['lucide-react'],
   },
 });

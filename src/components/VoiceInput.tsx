@@ -1,22 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import React, { useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useSpeechToText } from '../hooks/useSpeechToText';
 
 interface VoiceInputProps {
   onTranscript: (transcript: string) => void;
 }
 
 export default function VoiceInput({ onTranscript }: VoiceInputProps) {
-  const [isListening, setIsListening] = useState(false);
-  const { transcript, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  const {
+    isListening,
+    transcript,
+    startListening,
+    stopListening,
+    clearTranscript,
+    browserSupportsSpeechRecognition,
+  } = useSpeechToText();
 
   useEffect(() => {
-    if (transcript) {
+    if (transcript && !isListening) {
       onTranscript(transcript);
-      resetTranscript();
-      setIsListening(false);
+      clearTranscript();
     }
-  }, [transcript, onTranscript, resetTranscript]);
+  }, [transcript, isListening, onTranscript, clearTranscript]);
 
   if (!browserSupportsSpeechRecognition) {
     return null;
@@ -24,22 +30,34 @@ export default function VoiceInput({ onTranscript }: VoiceInputProps) {
 
   const toggleListening = () => {
     if (isListening) {
-      SpeechRecognition.stopListening();
+      stopListening();
     } else {
-      SpeechRecognition.startListening();
+      startListening();
     }
-    setIsListening(!isListening);
   };
 
   return (
-    <button
+    <motion.button
       onClick={toggleListening}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
       className={`p-2 rounded-full transition-colors ${
-        isListening ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-      } hover:bg-opacity-80`}
+        isListening
+          ? 'bg-red-100 text-red-600 hover:bg-red-200'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
       title={isListening ? 'Stop recording' : 'Start recording'}
     >
-      {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-    </button>
+      <motion.div
+        animate={isListening ? { scale: [1, 1.2, 1] } : {}}
+        transition={{ repeat: Infinity, duration: 1.5 }}
+      >
+        {isListening ? (
+          <MicOff className="w-5 h-5" />
+        ) : (
+          <Mic className="w-5 h-5" />
+        )}
+      </motion.div>
+    </motion.button>
   );
 }
